@@ -11,7 +11,13 @@
 #include <QTime>
 #include <math.h>
 #include <stdlib.h>
+#ifdef WIN32
 #include <windows.h>
+#else
+#include <unistd.h>
+#endif
+#include <stdio.h>
+
 
 #include <functional>
 #include <tr1/functional>
@@ -23,7 +29,13 @@ class Foobar : public QObject
 public:
     explicit Foobar() : QObject(0) { }
     QString DoSomething(QString string) {
+        qDebug() << "start " << string;
+#ifdef WIN32
         Sleep(rand() % 1000 + 500);
+#else
+      usleep((rand() % 2000 + 500) * 1000);
+#endif
+      qDebug() << "end " << string;
         return string + ": done";
     }
 
@@ -32,9 +44,6 @@ public:
         QObject::connect(&m_Watcher, SIGNAL(finished()), this, SLOT(OnFinished()));
         QFuture<QString> res = QtConcurrent::mapped(strings, std::bind1st(std::mem_fun(&Foobar::DoSomething), this));
         m_Watcher.setFuture(res);
-        foreach (QString str, res.results()) {
-            qDebug() << str;
-        }
     }
 
 public slots:
